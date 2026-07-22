@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+dist
+android
+ios
+.env
+.env*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-server.log
+dev-server.err.log
+.DS_Store

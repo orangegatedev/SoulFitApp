@@ -1,0 +1,32 @@
+
+> soulfit-gym-dashboard@1.0.0 dev
+> next dev -H 0.0.0.0 -p 3002
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3002
+   - Network:      http://0.0.0.0:3002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.8s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 5.5s (892 modules)
+ GET /login/ 200 in 6232ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 6.1s (2456 modules)
+ GET /dashboard/ 200 in 6410ms
+ GET /dashboard/ 200 in 43ms
+ GET /dashboard/ 200 in 136ms
+ GET /dashboard/ 200 in 40ms
+ ✓ Compiled in 7.6s (2456 modules)
+ GET /dashboard/ 200 in 1301ms
+ ○ Compiling /analytics/productos ...
+ ✓ Compiled /analytics/productos in 7.6s (2480 modules)
+ GET /analytics/productos/ 200 in 8611ms
+ GET /analytics/productos/ 200 in 312ms
+ ○ Compiling /users ...
+ ✓ Compiled /users in 2.5s (2506 modules)
+ GET /users/ 200 in 3492ms
+ ✓ Compiled /sucursales in 483ms (2520 modules)
+ GET /sucursales/ 200 in 672ms
+[?25h

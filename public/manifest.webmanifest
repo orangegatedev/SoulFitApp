@@ -1,0 +1,44 @@
+{
+  "name": "SoulFit",
+  "short_name": "SoulFit",
+  "description": "SoulFit analytics y gestion administrativa para gimnasios.",
+  "id": "/",
+  "start_url": "/login/",
+  "scope": "/",
+  "lang": "es",
+  "categories": [
+    "business",
+    "finance",
+    "health"
+  ],
+  "display": "standalone",
+  "background_color": "#050506",
+  "theme_color": "#dc143c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

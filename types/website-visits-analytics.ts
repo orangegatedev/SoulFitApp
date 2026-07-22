@@ -1,0 +1,5 @@
+export type ChartDatum = { label: string | number; value: number };
+export type VisitFilters = { from: string; to: string; device: string; path: string; country: string; city: string };
+export interface WebsiteVisitOverview { range: { from: string; to: string }; summary: { total_visits: number; visits_today: number; visits_7_days: number; visits_30_days: number; unique_visitors: number; top_path?: ChartDatum; top_device?: ChartDatum; top_location?: ChartDatum }; by_day: ChartDatum[]; by_hour: ChartDatum[]; by_device: ChartDatum[]; by_path: ChartDatum[]; by_location: ChartDatum[]; filter_options: { devices: string[]; paths: string[]; countries: string[]; cities: string[] } }
+export interface WebsiteVisit { id: number; visited_at: string; path: string; referrer?: string; ip_address?: string; browser?: string; os?: string; device_type?: string; country?: string; city?: string }
+export interface PaginatedVisits { data: WebsiteVisit[]; current_page: number; last_page: number; total: number }

@@ -58,6 +58,8 @@ cuando el cambio sea relevante para futuros desarrollos.
 - Las tablas anchas deben vivir dentro de un wrapper `max-w-full overflow-x-auto`; solo la tabla interna puede tener `min-w-*`.
 - Cards, charts, filtros y headers flex/grid deben declarar `min-w-0` para que el contenido se ajuste en movil sin romper el layout.
 - El sidebar movil funciona como drawer modal: overlay y panel deben quedar por encima de dropdowns/filtros, bloquear el scroll del body al abrirse y mantener scroll vertical interno para el menu.
+- En escritorio, `DashboardShell` mantiene el sidebar separado del scroll del contenido: la pagina usa `h-dvh overflow-hidden`, el contenido principal usa `overflow-y-auto` y el sidebar conserva su propio `overflow-y-auto`.
+- El colapso temporal del sidebar es preferencia local de UI (`soulfit-sidebar-collapsed`) y se lee solo despues del montaje para evitar hydration mismatch; no reemplaza ni modifica la visibilidad global del menu.
 
 ### Buscador superior
 - Reutilizar el input del Topbar para vistas administrativas con listados.
@@ -86,9 +88,31 @@ GET /membresias/buscar?q=texto
 - En la app, crear/editar sucursales con logo debe convertir archivos `multipart/form-data` o base64 a binario antes de guardar; no almacenar rutas, texto, `varchar`, `nvarchar` ni base64 permanente en `Logo`.
 - Los endpoints pueden responder el logo como `data:image/...;base64,...` cuando la vista lo necesita, pero nunca deben devolver binario crudo en JSON.
 
+### Configuracion global y favicon
+- El favicon global se administra desde Configuracion Global y se guarda como archivo `.ico` en `storage/app/public/system/branding/favicons`.
+- `GET /config/public` y `GET /admin/configuration` devuelven `faviconUrl` absoluto y descriptor `favicon: { path, url, version }`.
+- Las URLs de branding global deben servirse por `GET /config/assets/{type}/{filename}` para no depender de que `/public/storage` exista en cada entorno.
+- El preview de Configuracion Global usa `<img>` normal, no `next/image`, y debe mostrar `blob:` local inmediatamente al seleccionar un `.ico` antes de guardar.
+- El favicon del `<head>` se aplica globalmente en `AppConfigProvider`; primero existe fallback `/icons/icon-192.png` y luego se reemplaza por el favicon dinamico cuando `faviconUrl` carga correctamente.
+
 ### Usuarios
 Endpoint:
 GET /users/search?q=texto
+- Solo un actor autenticado con rol frontend `superadmin` / cargo backend `SuperAdmin` puede asignar, promover, degradar, cambiar estado o administrar usuarios SuperAdmin.
+- En formularios de usuarios, las opciones de rol salen de `getAssignableRoles(currentUserRole)`; para actores no SuperAdmin no se debe mostrar la opcion `SuperAdmin`.
+- La API es la fuente de seguridad: `POST /users`, `PUT /users/{id}` y `PATCH /users/{id}/status` deben responder `403` ante operaciones SuperAdmin no autorizadas.
+- La API debe impedir degradar, desactivar, cortar acceso o eliminar el ultimo SuperAdmin activo.
+
+### Configuracion global / SuperAdmin
+- El rol global se representa como `SuperAdmin` en `Cargos.Nombre` y como `superadmin` en el frontend.
+- La configuracion publica vive en `GET /config/public` bajo `NEXT_PUBLIC_API_URL`.
+- La administracion vive en `GET|PUT|POST /admin/configuration` y requiere `auth:sanctum` + `role:SuperAdmin`.
+- El frontend debe consumir titulo del navegador, favicon, titulos visibles y visibilidad desde `AppConfigProvider`/`useAppConfig()`.
+- `AppConfigProvider` no debe leer `localStorage` durante el inicializador de estado del primer render; la app usa `output: 'export'` y eso causa mismatch SSR/cliente. Leer cache/configuracion publica despues de montar.
+- El logo del login y sidebar no pertenece a Configuracion global; debe seguir saliendo de `GET /sucursals/logo`.
+- Claves estables de visibilidad del nav: `dashboard`, `ventas_productos`, `usuarios`, `sucursales`, `visitas_sitio`.
+- `Configuracion global` debe permanecer siempre visible para SuperAdmin y no debe entrar en el toggle de visibilidad.
+- El favicon configurable debe ser `.ico`; el panel usa `accept=".ico,image/x-icon,image/vnd.microsoft.icon"` y la API valida extension/MIME. Si existe una configuracion antigua PNG/JPG, la API debe devolver `faviconUrl: null` para usar fallback hasta que SuperAdmin cargue un ICO.
 
 ### Presencia y permisos de Cajero
 - La API expone `POST /auth/heartbeat` y `POST /auth/logout` bajo `NEXT_PUBLIC_API_URL`.
@@ -99,6 +123,8 @@ GET /users/search?q=texto
 - Los permisos globales del rol Cajero viven en `CashierPermissions` y deben validarse en backend con middleware, no solo ocultarse en UI.
 
 ### Dashboard
+- Los filtros de usuario en Dashboard, analytics de productos y Cierres de caja deben listar todos los usuarios activos mediante `GET /users/options`; no deben limitarse visualmente a usuarios con cargo Cajero.
+- En interfaz nueva usar la etiqueta "Usuario" en lugar de "Cajero" para filtros y reportes agregados, aunque se mantengan nombres internos legacy como `cashierId` por compatibilidad.
 - Cuando el dashboard se filtra por cajero, las metricas basadas en asistencias deben usar AperturaCaja/CierreCaja como fuente de verdad del turno.
 - Para ese caso, solo contar asistencias cuya Fecha caiga entre FechaApertura y FechaCierre del cajero.
 - Si la caja no tiene cierre, usar la fecha/hora actual como fin temporal.
@@ -110,6 +136,10 @@ GET /users/search?q=texto
 - Los filtros del dashboard deben aplicarse con debounce en frontend para evitar rafagas de peticiones.
 - Las peticiones del dashboard deben consumir AbortSignal de React Query para cancelar solicitudes obsoletas al cambiar filtros.
 - Evitar llamadas duplicadas: si dos vistas usan los mismos datos base, reutilizar la query y ordenar/derivar localmente cuando sea razonable.
+- Las tarjetas `Clientes mas frecuentes` y `Membresias mas vendidas` usan `CollapsibleChartCard`, inician cerradas por defecto y mantienen el boton PDF fuera del trigger para no alternar el accordion accidentalmente.
+- `GET /dashboard/summary` incluye descuentos historicos de membresias desde `Pagos_Membresias.Descuento`; no recalcular descuentos con la configuracion actual de `Membresia`.
+- Las metricas de descuentos de membresias usan solo pagos activos (`Pagos_Membresias.Estado = 'Activo'`) y los mismos filtros de fecha, cajero, membresia y sucursal que las ventas de membresias.
+- Para descuentos, `Moneda` vacia o `C%` se trata como Cordoba y `D%` como Dolar; no mezclar monedas en la UI cuando existan descuentos en ambas.
 
 ### Analytics productos
 - Ruta frontend: `/analytics/productos`.
@@ -122,6 +152,19 @@ GET /users/search?q=texto
 - El detalle usa paginacion backend con `page` y `per_page`; respuesta esperada: `{ data, meta: { current_page, per_page, total, last_page } }`.
 - Exportaciones del modulo: Excel `.xlsx` y PDF en cliente, usando los filtros debounced actuales y cargando el detalle completo paginado antes de generar el archivo.
 - Indices recomendados en SQL Server para este modulo: Ventas(Fecha), Ventas(UsuarioID), Ventas(SucursalId), DetalleVenta(VentaID), DetalleVenta(ProductoID), Productos(CategoriaID).
+
+### Cierres de caja
+- Ruta frontend: `/cierres-caja`.
+- Clave de visibilidad global de menu: `cierres_caja`.
+- Endpoints backend bajo `/api/app/cash-closings/*`: `filter-options`, listado paginado y `/{id}/analytics`.
+- `GET /api/app/cash-closings/{id}/analytics/discount-payments` carga bajo demanda los pagos con descuento del cierre seleccionado; debe cuadrar con `discounts.summary.paymentsWithDiscount` y `discounts.summary.totalDiscount`.
+- El listado filtra por `user_id`, `month`, `year`, `page` y `per_page`; siempre devuelve paginacion backend.
+- Fuente de verdad para asociar movimientos a un cierre: `CierreCaja.AperturaCajaId` + `AperturaCaja.FechaApertura` hasta `CierreCaja.FechaCierre`, filtrando tambien por `UsuarioID` y `SucursalID`.
+- Las tablas de movimientos no guardan `CierreCajaId` directo. No usar aproximaciones por dia completo; si falta la apertura asociada, el endpoint debe reportar que el analytics no es fiable en vez de inventar totales.
+- Membresias usa `Pagos_Membresias` + `Clientes_Membresia` + `Membresia`, con `Estado = 'Activo'`, `Usuario_Creacion_Id`, `Sucursal_Id`, ventana apertura-cierre y `Tipo_Cambio_Id` del cierre cuando exista.
+- El detalle de descuentos usa `Pagos_Membresias.Usuario_Creacion_Id` como Usuario/Cajero que realizo el cobro, `Monto_Bruto` como monto original historico con fallback `Total + Descuento - Mora`, `Descuento` como monto descontado y `Total` como monto pagado.
+- Productos usa `Ventas` + `DetalleVenta` + `Productos` + `Categorias`, con `Ventas.Estado = 'Activo'`, `DetalleVenta.Estado = 'Activo'`, `UsuarioID`, `SucursalId` y ventana apertura-cierre.
+- La clasificacion Gym/Spinning/Combo/Personalizadas se deriva de `Membresia.Nombre`/`Periodo` porque no existe una tabla formal de categorias de membresia; conservar tambien el desglose exacto por membresia.
 
 ## Reglas importantes
 - No romper el diseño actual

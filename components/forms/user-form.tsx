@@ -6,15 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { useSucursals } from "@/hooks/use-sucursals";
+import { canManageSuperAdminTarget, getAssignableRoles } from "@/lib/user-roles";
+import { useAuthStore } from "@/stores/auth-store";
 import type { UserRole } from "@/types/auth";
 import type { CreateUserPayload, SystemUser } from "@/types/users";
-
-const roleOptions: { value: UserRole; label: string }[] = [
-  { value: "admin", label: "Admin" },
-  { value: "manager", label: "Gerente" },
-  { value: "cashier", label: "Cajero" },
-  { value: "viewer", label: "Visualizador" }
-];
 
 function splitFallbackName(name?: string) {
   if (!name) return { nombres: "", apellidos: "" };
@@ -41,6 +36,7 @@ export function UserForm({
   isSubmitting?: boolean;
 }) {
   const { data: sucursals = [], isLoading: isLoadingSucursals } = useSucursals();
+  const currentRole = useAuthStore((state) => state.user?.role);
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
   const [email, setEmail] = useState("");
@@ -79,8 +75,17 @@ export function UserForm({
     });
   }
 
+  const canManageTarget = canManageSuperAdminTarget(currentRole, user?.role);
+  const availableRoles = getAssignableRoles(currentRole);
+  const canSubmit = canManageTarget && availableRoles.some((option) => option.value === role);
+
   return (
     <form className="grid min-w-0 gap-4" onSubmit={handleSubmit}>
+      {!canManageTarget ? (
+        <p className="rounded-md border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+          No tienes permisos para administrar usuarios SuperAdmin.
+        </p>
+      ) : null}
       <div className="grid min-w-0 gap-2 sm:grid-cols-2">
         <div className="grid min-w-0 gap-2">
           <Label htmlFor="nombres">Nombres</Label>
@@ -118,8 +123,9 @@ export function UserForm({
             id="role"
             value={role}
             onChange={(event) => setRole(event.target.value as UserRole)}
+            disabled={!canManageTarget}
           >
-            {roleOptions.map((option) => (
+            {availableRoles.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -157,7 +163,7 @@ export function UserForm({
         />
       </div>
       <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+        <Button type="submit" disabled={isSubmitting || !canSubmit} className="w-full sm:w-auto">
           {isSubmitting ? "Guardando..." : user ? "Actualizar usuario" : "Crear usuario"}
         </Button>
         {onCancel ? (

@@ -16,10 +16,17 @@ export interface DashboardSummary {
   membershipRevenue: number;
   productRevenue: number;
   totalRevenue: number;
+  membershipDiscountsCount: number;
+  membershipDiscountsRate: number;
+  membershipDiscountAmount: number;
+  membershipDiscountCordoba: number;
+  membershipDiscountDollar: number;
   attendanceTrend: number;
   clientsTrend: number;
   membershipsTrend: number;
   revenueTrend: number;
+  discountsTrend: number;
+  discountAmountTrend: number;
 }
 
 export interface TimeSeriesPoint {

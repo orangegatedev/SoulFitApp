@@ -19,6 +19,14 @@ export interface SystemUser {
   lastLogin?: string;
 }
 
+export interface UserFilterOption {
+  value: string;
+  label: string;
+  email: string;
+  role: UserRole;
+  branchId: string | null;
+}
+
 export interface CreateUserPayload {
   nombres: string;
   apellidos: string;

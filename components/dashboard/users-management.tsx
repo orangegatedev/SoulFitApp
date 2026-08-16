@@ -13,17 +13,11 @@ import {
   useUsers
 } from "@/hooks/use-users";
 import { useSucursals } from "@/hooks/use-sucursals";
+import { canManageSuperAdminTarget, roleLabels } from "@/lib/user-roles";
 import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTopbarSearchStore } from "@/stores/topbar-search-store";
 import type { CreateUserPayload, SystemUser } from "@/types/users";
-
-const roleLabels: Record<SystemUser["role"], string> = {
-  admin: "Admin",
-  manager: "Gerente",
-  cashier: "Cajero",
-  viewer: "Visualizador"
-};
 
 function getUserName(user: SystemUser) {
   return user.name ?? [user.nombres, user.apellidos].filter(Boolean).join(" ");
@@ -126,6 +120,7 @@ export function UsersManagement() {
   const [showForm, setShowForm] = useState(false);
   const currentUser = useAuthStore((state) => state.user);
   const canManageCashierSettings = currentUser?.role !== "cashier";
+  const protectedSuperAdminTitle = "No tienes permisos para administrar usuarios SuperAdmin";
   const searchQuery = useTopbarSearchStore((state) => state.queries.users);
   const sucursalNameById = useMemo(
     () => new Map(sucursals.map((sucursal) => [sucursal.id, sucursal.nombre])),
@@ -161,6 +156,7 @@ export function UsersManagement() {
     });
   }, [data, searchQuery, sucursalNameById]);
   const formError = getErrorMessage(editingUser ? updateUser.error : createUser.error);
+  const actionError = getErrorMessage(updateStatus.error);
 
   function handleSubmit(payload: CreateUserPayload) {
     createUser.reset();
@@ -239,7 +235,12 @@ export function UsersManagement() {
         <CardHeader>
           <CardTitle>Usuarios del sistema</CardTitle>
         </CardHeader>
-        <CardContent className="min-w-0">
+          <CardContent className="min-w-0">
+            {actionError ? (
+              <p className="mb-4 rounded-md border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+                {actionError}
+              </p>
+            ) : null}
           {isLoading ? (
             <p className="text-sm text-zinc-400">Cargando usuarios...</p>
           ) : isError ? (
@@ -262,6 +263,7 @@ export function UsersManagement() {
                 <tbody>
                   {filteredUsers.map((user) => {
                     const sessionSource = getSessionSourceBadge(user);
+                    const canManageUser = canManageSuperAdminTarget(currentUser?.role, user.role);
 
                     return (
                     <tr key={user.id} className="border-b border-white/6">
@@ -342,8 +344,10 @@ export function UsersManagement() {
                           <Button
                             variant="outline"
                             size="icon"
-                            title="Editar"
+                            disabled={!canManageUser}
+                            title={canManageUser ? "Editar" : protectedSuperAdminTitle}
                             onClick={() => {
+                              if (!canManageUser) return;
                               setEditingUser(user);
                               setShowForm(true);
                             }}
@@ -353,8 +357,16 @@ export function UsersManagement() {
                           <Button
                             variant="outline"
                             size="icon"
-                            title={user.active ? "Desactivar" : "Activar"}
+                            disabled={!canManageUser || updateStatus.isPending}
+                            title={
+                              canManageUser
+                                ? user.active
+                                  ? "Desactivar"
+                                  : "Activar"
+                                : protectedSuperAdminTitle
+                            }
                             onClick={() =>
+                              canManageUser &&
                               updateStatus.mutate({
                                 id: user.id,
                                 payload: { active: !user.active }
@@ -370,8 +382,16 @@ export function UsersManagement() {
                           <Button
                             variant={user.accessRevoked ? "outline" : "destructive"}
                             size="icon"
-                            title={user.accessRevoked ? "Restaurar acceso" : "Cortar acceso"}
+                            disabled={!canManageUser || updateStatus.isPending}
+                            title={
+                              canManageUser
+                                ? user.accessRevoked
+                                  ? "Restaurar acceso"
+                                  : "Cortar acceso"
+                                : protectedSuperAdminTitle
+                            }
                             onClick={() =>
+                              canManageUser &&
                               updateStatus.mutate({
                                 id: user.id,
                                 payload: {

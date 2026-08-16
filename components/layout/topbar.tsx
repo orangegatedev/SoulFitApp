@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Menu, Search } from "lucide-react";
+import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,15 @@ function getSearchScope(pathname: string): TopbarSearchScope | null {
   return null;
 }
 
-export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+export function Topbar({
+  sidebarCollapsed,
+  onMenuClick,
+  onSidebarToggle
+}: {
+  sidebarCollapsed: boolean;
+  onMenuClick: () => void;
+  onSidebarToggle: () => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
@@ -53,6 +61,20 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           aria-label="Abrir menú"
         >
           <Menu className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden shrink-0 transition-transform duration-300 hover:scale-105 lg:inline-flex"
+          onClick={onSidebarToggle}
+          aria-label={sidebarCollapsed ? "Mostrar menu" : "Ocultar menu"}
+          title={sidebarCollapsed ? "Mostrar menu" : "Ocultar menu"}
+        >
+          {sidebarCollapsed ? (
+            <PanelLeftOpen className="h-5 w-5 transition-transform duration-300" />
+          ) : (
+            <PanelLeftClose className="h-5 w-5 transition-transform duration-300" />
+          )}
         </Button>
         {searchScope && activeSearchConfig ? (
           <div className="relative min-w-0 flex-1">

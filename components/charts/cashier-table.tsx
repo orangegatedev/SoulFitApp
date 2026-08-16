@@ -8,7 +8,7 @@ export function CashierTable({ data }: { data: CashierMetric[] }) {
       <table className="w-full min-w-[620px] text-left text-sm">
         <thead className="text-xs uppercase text-zinc-500">
           <tr className="border-b border-white/10">
-            <th className="py-3 pr-3">Cajero</th>
+            <th className="py-3 pr-3">Usuario</th>
             <th className="py-3 pr-3">Ventas totales</th>
             <th className="py-3 pr-3">Recaudacion total</th>
             <th className="py-3">Performance</th>

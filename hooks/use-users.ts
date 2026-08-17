@@ -20,6 +20,13 @@ export function useCashiers() {
   });
 }
 
+export function useUserOptions() {
+  return useQuery({
+    queryKey: ["users", "options"],
+    queryFn: () => usersService.getUserOptions()
+  });
+}
+
 export function useCreateUser() {
   const queryClient = useQueryClient();
   return useMutation({

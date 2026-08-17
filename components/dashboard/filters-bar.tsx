@@ -8,14 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { useDashboardFilterOptions } from "@/hooks/use-dashboard";
 import { useMembershipSearch } from "@/hooks/use-memberships";
-import { useCashiers } from "@/hooks/use-users";
+import { useUserOptions } from "@/hooks/use-users";
 import { cn } from "@/lib/utils";
 import { useFilterStore } from "@/stores/filter-store";
 import type { Membership } from "@/types/memberships";
-import type { SystemUser } from "@/types/users";
+import type { UserFilterOption } from "@/types/users";
 
-function getCashierName(cashier: SystemUser) {
-  return cashier.name ?? [cashier.nombres, cashier.apellidos].filter(Boolean).join(" ") ?? "";
+function getUserName(user: UserFilterOption) {
+  return user.label;
 }
 
 const dropdownClassName =
@@ -29,12 +29,12 @@ const resetOptionButtonClassName =
 export function FiltersBar() {
   const { filters, setFilter, clearFilters } = useFilterStore();
   const { data } = useDashboardFilterOptions();
-  const { data: cashiers = [], isLoading: isLoadingCashiers, isError: isCashiersError } =
-    useCashiers();
+  const { data: users = [], isLoading: isLoadingUsers, isError: isUsersError } =
+    useUserOptions();
   const [cashierOpen, setCashierOpen] = useState(false);
   const [cashierSearch, setCashierSearch] = useState("");
   const [debouncedCashierSearch, setDebouncedCashierSearch] = useState("");
-  const [selectedCashier, setSelectedCashier] = useState<SystemUser | null>(null);
+  const [selectedCashier, setSelectedCashier] = useState<UserFilterOption | null>(null);
   const [membershipOpen, setMembershipOpen] = useState(false);
   const [membershipSearch, setMembershipSearch] = useState("");
   const [debouncedMembershipSearch, setDebouncedMembershipSearch] = useState("");
@@ -50,21 +50,21 @@ export function FiltersBar() {
   const visibleCashiers = useMemo(() => {
     const search = debouncedCashierSearch.trim().toLowerCase();
 
-    return cashiers.filter((cashier) => {
-        const cashierName = getCashierName(cashier).toLowerCase();
-        const cashierEmail = cashier.email.toLowerCase();
+    return users.filter((user) => {
+        const cashierName = getUserName(user).toLowerCase();
+        const cashierEmail = user.email.toLowerCase();
 
         return !search || cashierName.includes(search) || cashierEmail.includes(search);
       });
-  }, [cashiers, debouncedCashierSearch]);
+  }, [users, debouncedCashierSearch]);
   const matchingCashier = useMemo(
-    () => cashiers.find((cashier) => cashier.id === filters.cashierId),
-    [cashiers, filters.cashierId]
+    () => users.find((user) => user.value === filters.cashierId),
+    [users, filters.cashierId]
   );
   const visibleMemberships = useMemo(() => memberships, [memberships]);
   const selectedCashierLabel =
-    selectedCashier ? getCashierName(selectedCashier) : matchingCashier
-      ? getCashierName(matchingCashier)
+    selectedCashier ? getUserName(selectedCashier) : matchingCashier
+      ? getUserName(matchingCashier)
       : "Todos";
   const selectedMembershipLabel =
     selectedMembership?.name ??
@@ -108,11 +108,11 @@ export function FiltersBar() {
       return;
     }
 
-    const matchingCashier = cashiers.find((cashier) => cashier.id === filters.cashierId);
+    const matchingCashier = users.find((user) => user.value === filters.cashierId);
     if (matchingCashier) {
       setSelectedCashier(matchingCashier);
     }
-  }, [filters.cashierId, cashiers]);
+  }, [filters.cashierId, users]);
 
   useEffect(() => {
     if (!filters.membershipType) {
@@ -128,9 +128,9 @@ export function FiltersBar() {
     }
   }, [filters.membershipType, memberships]);
 
-  function selectCashier(cashier: SystemUser | null) {
+  function selectCashier(cashier: UserFilterOption | null) {
     setSelectedCashier(cashier);
-    setFilter("cashierId", cashier?.id ?? "");
+    setFilter("cashierId", cashier?.value ?? "");
     setCashierOpen(false);
     setCashierSearch("");
   }
@@ -181,7 +181,7 @@ export function FiltersBar() {
           />
         </div>
         <div className="grid min-w-0 gap-2">
-          <Label htmlFor="cashier">Cajero</Label>
+          <Label htmlFor="cashier">Usuario</Label>
           <div ref={cashierRef} className="relative min-w-0">
             <button
               id="cashier"
@@ -203,7 +203,7 @@ export function FiltersBar() {
                   <Input
                     value={cashierSearch}
                     onChange={(event) => setCashierSearch(event.target.value)}
-                    placeholder="Buscar cajero"
+                    placeholder="Buscar usuario"
                     className="pl-9"
                     autoFocus
                   />
@@ -218,24 +218,24 @@ export function FiltersBar() {
                     <span className="min-w-0 flex-1 truncate">Todos</span>
                   </button>
 
-                  {isLoadingCashiers ? (
-                    <p className="px-3 py-2 text-sm text-zinc-400">Cargando cajeros...</p>
-                  ) : isCashiersError ? (
+                  {isLoadingUsers ? (
+                    <p className="px-3 py-2 text-sm text-zinc-400">Cargando usuarios...</p>
+                  ) : isUsersError ? (
                     <p className="px-3 py-2 text-sm text-red-200">
-                      No fue posible cargar cajeros.
+                      No fue posible cargar usuarios.
                     </p>
                   ) : visibleCashiers.length ? (
                     visibleCashiers.map((cashier) => (
                       <button
-                        key={cashier.id}
+                        key={cashier.value}
                         type="button"
                         className={cn(
                           optionButtonClassName,
-                          filters.cashierId === cashier.id ? "bg-primary/15 text-red-100" : ""
+                          filters.cashierId === cashier.value ? "bg-primary/15 text-red-100" : ""
                         )}
                         onClick={() => selectCashier(cashier)}
                       >
-                        <span className="min-w-0 flex-1 truncate">{getCashierName(cashier)}</span>
+                        <span className="min-w-0 flex-1 truncate">{getUserName(cashier)}</span>
                       </button>
                     ))
                   ) : (

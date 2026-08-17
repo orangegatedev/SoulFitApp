@@ -4,7 +4,8 @@ import type {
   CreateUserPayload,
   SystemUser,
   UpdateUserPayload,
-  UpdateUserStatusPayload
+  UpdateUserStatusPayload,
+  UserFilterOption
 } from "@/types/users";
 
 type ApiEnvelope<T> = {
@@ -60,6 +61,21 @@ type UsersListResponse =
 
 type UserResponse = UserApiResponse | ApiEnvelope<UserApiResponse>;
 
+type UserOptionApiResponse = {
+  value?: string | number;
+  id?: string | number;
+  Id?: string | number;
+  label?: string;
+  name?: string;
+  Nombre?: string;
+  email?: string;
+  Email?: string;
+  role?: string;
+  Role?: string;
+  branchId?: string | number | null;
+  Sucursal_Id?: string | number | null;
+};
+
 function getFullName(user: Pick<SystemUser, "name" | "nombres" | "apellidos">) {
   return user.name ?? [user.nombres, user.apellidos].filter(Boolean).join(" ");
 }
@@ -71,12 +87,17 @@ function getBranchName(sucursalId?: string) {
 function normalizeRole(role?: string) {
   const normalizedRole = role?.trim().toLowerCase();
   if (
+    normalizedRole === "superadmin" ||
     normalizedRole === "admin" ||
     normalizedRole === "manager" ||
     normalizedRole === "cashier" ||
     normalizedRole === "viewer"
   ) {
     return normalizedRole;
+  }
+
+  if (normalizedRole === "super admin") {
+    return "superadmin";
   }
 
   if (normalizedRole === "cajero" || normalizedRole === "cajera") {
@@ -167,6 +188,20 @@ function normalizeUser(user: UserApiResponse): SystemUser {
   };
 }
 
+function normalizeUserOption(user: UserOptionApiResponse): UserFilterOption {
+  const value = String(user.value ?? user.id ?? user.Id ?? "");
+  const label = String(user.label ?? user.name ?? user.Nombre ?? user.email ?? user.Email ?? "Usuario");
+  const branchId = user.branchId ?? user.Sucursal_Id;
+
+  return {
+    value,
+    label,
+    email: String(user.email ?? user.Email ?? ""),
+    role: normalizeRole(user.role ?? user.Role),
+    branchId: branchId === null || branchId === undefined ? null : String(branchId)
+  };
+}
+
 function toApiPayload(payload: CreateUserPayload | UpdateUserPayload) {
   const name = [payload.nombres, payload.apellidos].filter(Boolean).join(" ").trim();
   const branchId = payload.sucursalId ? Number(payload.sucursalId) : undefined;
@@ -221,6 +256,21 @@ export const usersService = {
     }
 
     return mockUsers.filter((user) => user.role === "cashier");
+  },
+
+  async getUserOptions(): Promise<UserFilterOption[]> {
+    if (!useMocks) {
+      const { data } = await api.get<UserOptionApiResponse[]>("/users/options");
+      return data.map(normalizeUserOption).filter((user) => user.value);
+    }
+
+    return mockUsers.map((user) => ({
+      value: user.id,
+      label: user.name ?? [user.nombres, user.apellidos].filter(Boolean).join(" "),
+      email: user.email,
+      role: user.role,
+      branchId: user.sucursalId ?? null
+    }));
   },
 
   async createUser(payload: CreateUserPayload): Promise<SystemUser> {

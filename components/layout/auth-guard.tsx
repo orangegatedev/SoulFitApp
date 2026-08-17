@@ -9,6 +9,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { token, user, hasHydrated, logout } = useAuthStore();
   const isLogin = pathname.startsWith("/login");
+  const isSuperAdminRoute = pathname.startsWith("/administracion/configuracion");
 
   useEffect(() => {
     const onUnauthorized = () => logout();
@@ -32,8 +33,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     if (token && isLogin) {
       router.replace("/dashboard");
+      return;
     }
-  }, [hasHydrated, isLogin, logout, router, token, user]);
+
+    if (token && user && isSuperAdminRoute && user.role !== "superadmin") {
+      router.replace("/dashboard");
+    }
+  }, [hasHydrated, isLogin, isSuperAdminRoute, logout, router, token, user]);
 
   if (!hasHydrated && !isLogin) {
     return (

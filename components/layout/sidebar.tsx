@@ -4,29 +4,49 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
-import { BarChart3, Building2, Globe2, PackageSearch, Users, X } from "lucide-react";
+import { BarChart3, Building2, ClipboardCheck, Globe2, PackageSearch, Settings2, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { sucursalsService } from "@/services/sucursals.service";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
+import { useAppConfig } from "@/components/layout/app-config-provider";
+import { sucursalsService } from "@/services/sucursals.service";
+import type { NavItemKey } from "@/types/app-config";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/analytics/productos", label: "Ventas productos", icon: PackageSearch },
-  { href: "/users", label: "Usuarios", icon: Users },
-  { href: "/sucursales", label: "Sucursales", icon: Building2 },
-  { href: "/analytics/visitas-web", label: "Visitas del sitio", icon: Globe2, adminOnly: true }
+const navItems: Array<{
+  key: NavItemKey | "global_configuration";
+  href: string;
+  label: string;
+  icon: typeof BarChart3;
+  adminOnly?: boolean;
+  superAdminOnly?: boolean;
+}> = [
+  { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { key: "ventas_productos", href: "/analytics/productos", label: "Ventas productos", icon: PackageSearch },
+  { key: "cierres_caja", href: "/cierres-caja", label: "Cierres de caja", icon: ClipboardCheck },
+  { key: "usuarios", href: "/users", label: "Usuarios", icon: Users },
+  { key: "sucursales", href: "/sucursales", label: "Sucursales", icon: Building2 },
+  { key: "visitas_sitio", href: "/analytics/visitas-web", label: "Visitas del sitio", icon: Globe2, adminOnly: true },
+  {
+    key: "global_configuration",
+    href: "/administracion/configuracion",
+    label: "Configuracion global",
+    icon: Settings2,
+    superAdminOnly: true
+  }
 ];
 
 export function Sidebar({
   open,
+  collapsed,
   onClose
 }: {
   open: boolean;
+  collapsed: boolean;
   onClose: () => void;
 }) {
   const pathname = usePathname();
   const role = useAuthStore((state) => state.user?.role);
+  const { config } = useAppConfig();
   const { data: branchLogo } = useQuery({
     queryKey: ["sucursals", "logo"],
     queryFn: () => sucursalsService.getLogo()
@@ -78,8 +98,11 @@ export function Sidebar({
       <aside
         aria-label="Menú principal"
         className={cn(
-          "fixed left-0 top-0 z-[200] flex h-dvh w-[80vw] max-w-xs flex-col overflow-y-auto overscroll-contain border-r border-red-400/10 bg-[#100509]/98 p-4 shadow-[20px_0_50px_rgba(0,0,0,0.55)] transition-transform duration-300 lg:sticky lg:top-0 lg:z-40 lg:w-72 lg:max-w-none lg:translate-x-0 lg:overflow-y-auto lg:shadow-glow",
-          open ? "translate-x-0" : "-translate-x-full"
+          "fixed left-0 top-0 z-[200] flex h-dvh w-[80vw] max-w-xs flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-r border-red-400/10 bg-[#100509]/98 p-4 shadow-[20px_0_50px_rgba(0,0,0,0.55)] transition-[transform,width,padding,opacity,border-color] duration-300 ease-out motion-reduce:transition-none lg:sticky lg:top-0 lg:z-40 lg:max-w-none lg:overflow-y-auto lg:shadow-glow",
+          open ? "translate-x-0" : "-translate-x-full",
+          collapsed
+            ? "lg:pointer-events-none lg:w-0 lg:-translate-x-full lg:border-r-0 lg:p-0 lg:opacity-0"
+            : "lg:w-72 lg:translate-x-0 lg:opacity-100"
         )}
       >
         <div className="flex items-center justify-between">
@@ -96,7 +119,7 @@ export function Sidebar({
               </div>
             )}
             <div>
-              <p className="text-lg font-black text-white">SoulFit</p>
+              <p className="text-lg font-black text-white">{config.navTitle}</p>
               <p className="text-xs uppercase tracking-[0.28em] text-cyan-100/70">
                 analytics
               </p>
@@ -114,7 +137,11 @@ export function Sidebar({
         </div>
 
         <nav className="mt-8 grid gap-2">
-          {navItems.filter((item) => !item.adminOnly || role === "admin").map((item) => {
+          {navItems.filter((item) => {
+            if (item.superAdminOnly) return role === "superadmin";
+            if (item.adminOnly && role !== "admin" && role !== "superadmin") return false;
+            return config.navVisibility[item.key as NavItemKey] ?? true;
+          }).map((item) => {
             const Icon = item.icon;
             const active = pathname.startsWith(item.href);
             return (

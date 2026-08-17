@@ -16,7 +16,7 @@ export function MetricCard({
   trend: number;
   icon: LucideIcon;
   money?: boolean;
-  details?: Array<{ label: string; value: number; money?: boolean }>;
+  details?: Array<{ label: string; value: number; money?: boolean; text?: string }>;
 }) {
   const formatValue = (amount: number, asMoney = money) =>
     asMoney ? formatCurrency(amount) : formatNumber(amount);
@@ -42,7 +42,7 @@ export function MetricCard({
               <div key={detail.label} className="flex min-w-0 items-center justify-between gap-3">
                 <span className="min-w-0 truncate text-zinc-400">{detail.label}</span>
                 <span className="shrink-0 text-right font-semibold text-zinc-100">
-                  {formatValue(detail.value, detail.money)}
+                  {detail.text ?? formatValue(detail.value, detail.money)}
                 </span>
               </div>
             ))}

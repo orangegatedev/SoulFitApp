@@ -7,6 +7,7 @@ import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { sessionTimeoutService } from "@/services/session-timeout.service";
+import { AppConfigProvider } from "@/components/layout/app-config-provider";
 
 function SessionTimeoutController() {
   useSessionTimeout();
@@ -96,9 +97,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
       <QueryClientProvider client={queryClient}>
-        <SessionTimeoutController />
-        <SessionHeartbeat />
-        {children}
+        <AppConfigProvider>
+          <SessionTimeoutController />
+          <SessionHeartbeat />
+          {children}
+        </AppConfigProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

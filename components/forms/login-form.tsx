@@ -12,6 +12,7 @@ import { authService } from "@/services/auth.service";
 import { sucursalsService } from "@/services/sucursals.service";
 import { useAuthStore } from "@/stores/auth-store";
 import { sessionTimeoutService } from "@/services/session-timeout.service";
+import { useAppConfig } from "@/components/layout/app-config-provider";
 
 function getLoginErrorMessage(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -37,6 +38,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [shouldLoadLogo, setShouldLoadLogo] = useState(false);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+  const { config, isLoading: isConfigLoading } = useAppConfig();
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setShouldLoadLogo(true), 0);
@@ -85,7 +87,9 @@ export function LoginForm() {
           )}
         </div>
         <div className="w-full">
-          <CardTitle className="text-2xl font-black">Entrar a SoulFit</CardTitle>
+          <CardTitle className="min-h-8 text-2xl font-black">
+            {isConfigLoading ? "" : config.loginTitle}
+          </CardTitle>
         </div>
       </CardHeader>
       <CardContent>

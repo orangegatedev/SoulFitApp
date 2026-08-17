@@ -1,11 +1,12 @@
 "use client";
 
-import { Activity, Banknote, TicketCheck, Users } from "lucide-react";
+import { Activity, BadgeDollarSign, BadgePercent, Banknote, TicketCheck, Users } from "lucide-react";
 import { AbsentClientsCard } from "@/components/dashboard/absent-clients-card";
 import { AttendanceChart } from "@/components/charts/attendance-chart";
 import { BarMetricChart } from "@/components/charts/bar-metric-chart";
 import { CashierTable } from "@/components/charts/cashier-table";
 import { ChartCard } from "@/components/charts/chart-card";
+import { CollapsibleChartCard } from "@/components/charts/collapsible-chart-card";
 import { RankingList } from "@/components/charts/ranking-list";
 import {
   ChartSkeleton,
@@ -17,6 +18,19 @@ import { FiltersBar } from "@/components/dashboard/filters-bar";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useFilterStore } from "@/stores/filter-store";
+
+function formatPercent(value: number) {
+  return `${new Intl.NumberFormat("es-NI", {
+    maximumFractionDigits: 2
+  }).format(value)}%`;
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD"
+  }).format(value);
+}
 
 export function DashboardView() {
   const filters = useFilterStore((state) => state.filters);
@@ -39,14 +53,18 @@ export function DashboardView() {
       <FiltersBar />
 
       {summaryWaiting ? (
-        <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <WaitingState label="Preparando metricas..." />
           <WaitingState label="Preparando clientes..." />
           <WaitingState label="Preparando ventas..." />
           <WaitingState label="Preparando recaudacion..." />
+          <WaitingState label="Preparando descuentos..." />
+          <WaitingState label="Preparando total descontado..." />
         </section>
       ) : dashboard.summary.isLoading ? (
-        <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <ChartSkeleton />
+          <ChartSkeleton />
           <ChartSkeleton />
           <ChartSkeleton />
           <ChartSkeleton />
@@ -55,7 +73,7 @@ export function DashboardView() {
       ) : dashboard.summary.isError ? (
         <ErrorState label="No fue posible cargar las metricas principales." />
       ) : dashboard.summary.data ? (
-        <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <MetricCard
             label="Asistencias totales"
             value={dashboard.summary.data.totalAttendance}
@@ -97,6 +115,41 @@ export function DashboardView() {
               }
             ]}
           />
+          <MetricCard
+            label="Descuentos aplicados"
+            value={dashboard.summary.data.membershipDiscountsCount}
+            trend={dashboard.summary.data.discountsTrend}
+            icon={BadgePercent}
+            details={[
+              {
+                label: "Membresias vendidas",
+                value: dashboard.summary.data.membershipsSold
+              },
+              {
+                label: "Con descuento",
+                value: dashboard.summary.data.membershipDiscountsRate,
+                text: formatPercent(dashboard.summary.data.membershipDiscountsRate)
+              }
+            ]}
+          />
+          <MetricCard
+            label="Total descontado"
+            value={dashboard.summary.data.membershipDiscountCordoba}
+            trend={dashboard.summary.data.discountAmountTrend}
+            icon={BadgeDollarSign}
+            money
+            details={
+              dashboard.summary.data.membershipDiscountDollar > 0
+                ? [
+                    {
+                      label: "Dolares",
+                      value: dashboard.summary.data.membershipDiscountDollar,
+                      text: formatUsd(dashboard.summary.data.membershipDiscountDollar)
+                    }
+                  ]
+                : []
+            }
+          />
         </section>
       ) : null}
 
@@ -129,7 +182,7 @@ export function DashboardView() {
           )}
         </ChartCard>
 
-        <ChartCard title="Clientes mas frecuentes" reportType="top-clients">
+        <CollapsibleChartCard title="Clientes mas frecuentes" reportType="top-clients">
           {secondaryWaiting ? (
             <WaitingState label="Esperando graficas principales..." />
           ) : dashboard.topClients.isLoading ? (
@@ -141,9 +194,9 @@ export function DashboardView() {
           ) : (
             <EmptyState label="No hay clientes frecuentes para mostrar." />
           )}
-        </ChartCard>
+        </CollapsibleChartCard>
 
-        <ChartCard title="Membresias mas vendidas" reportType="memberships">
+        <CollapsibleChartCard title="Membresias mas vendidas" reportType="memberships">
           {secondaryWaiting ? (
             <WaitingState label="Esperando graficas principales..." />
           ) : dashboard.memberships.isLoading ? (
@@ -155,7 +208,7 @@ export function DashboardView() {
           ) : (
             <EmptyState label="No hay membresias vendidas en el periodo." />
           )}
-        </ChartCard>
+        </CollapsibleChartCard>
 
         {secondaryWaiting ? (
           <div className="xl:col-span-2">
@@ -177,31 +230,31 @@ export function DashboardView() {
           </div>
         )}
 
-        <ChartCard title="Cajeros con mas ventas" reportType="cashiers-sales">
+        <ChartCard title="Usuarios con mas ventas" reportType="cashiers-sales">
           {secondaryWaiting ? (
             <WaitingState label="Esperando graficas principales..." />
           ) : dashboard.cashierSales.isLoading ? (
             <ChartSkeleton />
           ) : dashboard.cashierSales.isError ? (
-            <ErrorState label="No fue posible cargar ventas por cajero." />
+            <ErrorState label="No fue posible cargar ventas por usuario." />
           ) : dashboard.cashierSales.data?.length ? (
             <CashierTable data={dashboard.cashierSales.data} />
           ) : (
-            <EmptyState label="No hay ventas por cajero." />
+            <EmptyState label="No hay ventas por usuario." />
           )}
         </ChartCard>
 
-        <ChartCard title="Total recaudado por cajero" reportType="cashiers-revenue">
+        <ChartCard title="Total recaudado por usuario" reportType="cashiers-revenue">
           {secondaryWaiting ? (
             <WaitingState label="Esperando graficas principales..." />
           ) : dashboard.cashierRevenue.isLoading ? (
             <ChartSkeleton />
           ) : dashboard.cashierRevenue.isError ? (
-            <ErrorState label="No fue posible cargar recaudacion por cajero." />
+            <ErrorState label="No fue posible cargar recaudacion por usuario." />
           ) : dashboard.cashierRevenue.data?.length ? (
             <CashierTable data={dashboard.cashierRevenue.data} />
           ) : (
-            <EmptyState label="No hay recaudacion por cajero." />
+            <EmptyState label="No hay recaudacion por usuario." />
           )}
         </ChartCard>
       </section>

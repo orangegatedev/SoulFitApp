@@ -36,10 +36,6 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent"
   },
   icons: {
-    icon: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
-    ],
     apple: "/icons/apple-touch-icon.png"
   }
 };
@@ -57,9 +53,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark" suppressHydrationWarning>
+    <html lang="es" className="dark" style={{ colorScheme: "dark" }}>
       <head>
         <meta charSet="UTF-8" />
+        <link rel="icon" href="/icons/icon-192.png" data-soulfit-favicon="fallback" />
+        <link rel="shortcut icon" href="/icons/icon-192.png" data-soulfit-favicon="fallback" />
         <script dangerouslySetInnerHTML={{ __html: localServiceWorkerCleanupScript }} />
       </head>
       <body>

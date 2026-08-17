@@ -30,10 +30,17 @@ export const mockSummary: DashboardSummary = {
   membershipRevenue: 1200000,
   productRevenue: 298760,
   totalRevenue: 1498760,
+  membershipDiscountsCount: 94,
+  membershipDiscountsRate: 11.16,
+  membershipDiscountAmount: 48250,
+  membershipDiscountCordoba: 48250,
+  membershipDiscountDollar: 0,
   attendanceTrend: 12.8,
   clientsTrend: 7.4,
   membershipsTrend: 18.1,
-  revenueTrend: 21.6
+  revenueTrend: 21.6,
+  discountsTrend: 9.3,
+  discountAmountTrend: 14.8
 };
 
 export const mockAttendance: TimeSeriesPoint[] = [
@@ -283,8 +290,8 @@ export function buildReport(type: ReportType): ReportResponse {
     "top-clients": "Clientes mas frecuentes",
     "peak-hours": "Horas mas visitadas",
     memberships: "Membresias vendidas",
-    "cashiers-sales": "Ventas por cajero",
-    "cashiers-revenue": "Recaudacion por cajero"
+    "cashiers-sales": "Ventas por usuario",
+    "cashiers-revenue": "Recaudacion por usuario"
   };
 
   if (type === "attendance") {
@@ -334,7 +341,7 @@ export function buildReport(type: ReportType): ReportResponse {
       generatedAt: new Date().toISOString(),
       filters: {},
       columns: [
-        "Cajero",
+        "Usuario",
         "Ventas productos",
         "Ventas membresias",
         "Ventas total",
@@ -343,7 +350,7 @@ export function buildReport(type: ReportType): ReportResponse {
         "Recaudacion total"
       ],
       rows: mockCashiers.map((item) => ({
-        Cajero: item.cashierName,
+        Usuario: item.cashierName,
         "Ventas productos": item.productSales,
         "Ventas membresias": item.membershipSales,
         "Ventas total": item.sales,
@@ -352,7 +359,7 @@ export function buildReport(type: ReportType): ReportResponse {
         "Recaudacion total": item.revenue
       })),
       summary: [
-        { label: "Cajeros activos", value: mockCashiers.length },
+        { label: "Usuarios activos", value: mockCashiers.length },
         {
           label: "Recaudacion productos",
           value: mockCashiers.reduce((total, cashier) => total + cashier.productRevenue, 0)

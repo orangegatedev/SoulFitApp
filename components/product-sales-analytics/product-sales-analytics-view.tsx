@@ -42,6 +42,7 @@ import {
 } from "@/components/dashboard/state-blocks";
 import { RankingList } from "@/components/charts/ranking-list";
 import { useProductSalesAnalytics } from "@/hooks/use-product-sales-analytics";
+import { useUserOptions } from "@/hooks/use-users";
 import {
   exportProductSalesExcel,
   exportProductSalesPdf
@@ -375,7 +376,7 @@ function DetailsTable({ data }: { data: ProductSalesDetailRow[] }) {
         <thead className="text-xs uppercase text-zinc-500">
           <tr className="border-b border-white/10">
             <th className="py-3 pr-3">Fecha</th>
-            <th className="py-3 pr-3">Cajero</th>
+            <th className="py-3 pr-3">Usuario</th>
             <th className="py-3 pr-3">Sucursal</th>
             <th className="py-3 pr-3">Categoria</th>
             <th className="py-3 pr-3">Producto</th>
@@ -496,6 +497,7 @@ export function ProductSalesAnalyticsView() {
   );
   const analytics = useProductSalesAnalytics(filters, detailsParams);
   const options = analytics.filterOptions.data;
+  const { data: userOptions = [], isLoading: isLoadingUsers } = useUserOptions();
   const productOptions = useMemo(() => {
     const products = options?.products ?? [];
     if (!filters.categoryId) return products;
@@ -649,13 +651,13 @@ export function ProductSalesAnalyticsView() {
           </div>
           <SearchableSelect
             id="product-sales-cashier"
-            label="Cajero"
+            label="Usuario"
             value={filters.cashierId}
-            options={options?.cashiers ?? []}
+            options={userOptions}
             allLabel="Todos"
-            searchPlaceholder="Buscar cajero"
+            searchPlaceholder="Buscar usuario"
             onChange={(value) => setFilter("cashierId", value)}
-            disabled={analytics.filterOptions.isLoading}
+            disabled={isLoadingUsers}
           />
           <SearchableSelect
             id="product-sales-category"
@@ -807,17 +809,17 @@ export function ProductSalesAnalyticsView() {
           )}
         </AnalyticsCard>
 
-        <AnalyticsCard title="Ventas por cajero">
+        <AnalyticsCard title="Ventas por usuario">
           {secondaryWaiting ? (
             <WaitingState label="Esperando graficas principales..." />
           ) : analytics.byCashier.isLoading ? (
             <ChartSkeleton />
           ) : analytics.byCashier.isError ? (
-            <ErrorState label="No fue posible cargar ventas por cajero." />
+            <ErrorState label="No fue posible cargar ventas por usuario." />
           ) : analytics.byCashier.data?.length ? (
             <RevenueBarChart data={analytics.byCashier.data} />
           ) : (
-            <EmptyState label="No hay cajeros con ventas de productos." />
+            <EmptyState label="No hay usuarios con ventas de productos." />
           )}
         </AnalyticsCard>
 
